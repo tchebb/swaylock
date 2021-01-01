@@ -57,7 +57,7 @@ void schedule_indicator_clear(struct swaylock_state *state) {
 		loop_remove_timer(state->eventloop, state->clear_indicator_timer);
 	}
 	state->clear_indicator_timer = loop_add_timer(
-			state->eventloop, 3000, clear_indicator, state);
+			state->eventloop, 10000, clear_indicator, state);
 }
 
 static void clear_password(void *data) {
