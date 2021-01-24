@@ -277,6 +277,19 @@ static bool surface_is_opaque(struct swaylock_surface *surface) {
 	return (surface->state->args.colors.background & 0xff) == 0xff;
 }
 
+struct zwlr_output_power_v1_listener _wlr_output_power_listener;
+
+static void create_output_power(struct swaylock_surface *surface) {
+	struct swaylock_state *state = surface->state;
+
+	if (state->zwlr_output_power_manager) {
+		surface->wlr_output_power = zwlr_output_power_manager_v1_get_output_power(
+				state->zwlr_output_power_manager, surface->output);
+		zwlr_output_power_v1_add_listener(
+				surface->wlr_output_power, &_wlr_output_power_listener, surface);
+	}
+}
+
 struct zxdg_output_v1_listener _xdg_output_listener;
 
 static void create_layer_surface(struct swaylock_surface *surface) {
@@ -792,6 +805,7 @@ static void handle_global(void *data, struct wl_registry *registry,
 		wl_list_insert(&state->surfaces, &surface->link);
 
 		if (state->run_display) {
+			create_output_power(surface);
 			create_layer_surface(surface);
 			wl_display_roundtrip(state->display);
 		}
@@ -1907,25 +1921,18 @@ int main(int argc, char **argv) {
 				iter_image->cairo_surface, &state, 1);
 	}
 
-	if (state.zwlr_output_power_manager) {
-		struct swaylock_surface *surface;
-		wl_list_for_each(surface, &state.surfaces, link) {
-			surface->wlr_output_power = zwlr_output_power_manager_v1_get_output_power(
-					state.zwlr_output_power_manager, surface->output);
-			zwlr_output_power_v1_add_listener(
-					surface->wlr_output_power, &_wlr_output_power_listener, surface);
-		}
-		wl_display_roundtrip(state.display);
-	} else {
+	if (!state.zwlr_output_power_manager) {
 		swaylock_log(LOG_INFO, "Compositor does not support zwlr_output_power_"
 				"manager, DPMS will not work");
 	}
 
 	struct swaylock_surface *surface;
 	wl_list_for_each(surface, &state.surfaces, link) {
+		create_output_power(surface);
 		create_layer_surface(surface);
 	}
 
+	wl_display_roundtrip(state.display);
 	set_dpms(&state);
 
 	wl_list_for_each(surface, &state.surfaces, link) {
