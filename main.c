@@ -408,6 +408,7 @@ static void handle_global(void *data, struct wl_registry *registry,
 			create_output_power(surface);
 			create_layer_surface(surface);
 			wl_display_roundtrip(state->display);
+			set_dpms(surface->state);
 		}
 	}
 }
