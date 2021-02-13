@@ -1200,6 +1200,8 @@ int main(int argc, char **argv) {
 	wl_list_init(&state.images);
 	set_default_colors(&state.args.colors);
 
+	state.auth_state = AUTH_STATE_INPUT_NOP;
+
 	char *config_path = NULL;
 	int result = parse_options(argc, argv, NULL, NULL, &config_path);
 	if (result != 0) {
@@ -1311,6 +1313,8 @@ int main(int argc, char **argv) {
 			display_in, NULL);
 
 	loop_add_fd(state.eventloop, get_comm_reply_fd(), POLLIN, comm_in, NULL);
+
+	schedule_indicator_clear(&state);
 
 	state.run_display = true;
 	while (state.run_display) {
